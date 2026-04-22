@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="vi" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | Task Manager</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- Script kiểm tra theme ngay lập tức để tránh nháy trắng -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-bs-theme', savedTheme);
+        })();
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Gradient xanh lá - xanh dương đặc trưng của Register */
+            background: linear-gradient(135deg, #2af598 0%, #009efd 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            transition: all 0.3s ease;
+        }
+
+        /* Điều chỉnh background khi ở chế độ tối */
+        [data-bs-theme="dark"] body {
+            background: linear-gradient(135deg, #09203f 0%, #1e3c72 100%);
+        }
+
+        .register-card {
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid var(--bs-border-color);
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+
+        .register-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .icon-box {
+            width: 65px;
+            height: 65px;
+            background: var(--bs-success-border-subtle);
+            color: #2af598;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
+        }
+
+        .form-control {
+            border-radius: 12px;
+            padding: 12px 15px;
+            background-color: var(--bs-tertiary-bg);
+            border: 1px solid var(--bs-border-color);
+            color: var(--bs-body-color);
+        }
+
+        .form-control:focus {
+            background-color: var(--bs-body-bg);
+            box-shadow: 0 0 0 4px rgba(42, 245, 152, 0.15);
+            border-color: #2af598;
+        }
+
+        .btn-register {
+            background: linear-gradient(to right, #2af598, #009efd);
+            border: none;
+            border-radius: 12px;
+            padding: 12px;
+            font-weight: 700;
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .btn-register:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(42, 245, 152, 0.4);
+            color: white;
+        }
+
+        .login-link {
+            color: #009efd;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        /* Nút đổi theme nhanh ở góc màn hình */
+        .theme-floating-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: white;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Nút đổi theme nhanh -->
+<div class="theme-floating-btn" id="darkModeToggle">
+    <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+</div>
+
+<div class="register-card">
+    <div class="text-center">
+        <div class="icon-box">
+            <i class="bi bi-person-plus-fill"></i>
+        </div>
+        <h3 class="fw-bold">Tạo tài khoản</h3>
+        <p class="text-muted small mb-4">Bắt đầu quản lý công việc hiệu quả</p>
+    </div>
+
+    <form method="POST">
+        <div class="mb-3">
+            <label class="form-label small fw-bold">Tên đăng nhập</label>
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-person text-muted"></i></span>
+                <input class="form-control border-start-0" name="username" placeholder="Chọn tên đăng nhập" required>
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            <label class="form-label small fw-bold">Mật khẩu</label>
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-key text-muted"></i></span>
+                <input class="form-control border-start-0" type="password" name="password" placeholder="Tối thiểu 6 ký tự" required>
+            </div>
+        </div>
+
+        <button class="btn btn-register w-100 mb-3">Đăng ký ngay</button>
+    </form>
+
+    <div class="text-center mt-3">
+        <p class="small text-muted mb-0">Đã có tài khoản? 
+            <a href="/login" class="login-link">Đăng nhập</a>
+        </p>
+    </div>
+</div>
+
+<script>
+    const themeToggle = document.getElementById('darkModeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    const htmlElement = document.documentElement;
+
+    const updateIcon = (theme) => {
+        if (theme === 'dark') {
+            themeIcon.classList.replace('bi-moon-stars-fill', 'bi-sun-fill');
+        } else {
+            themeIcon.classList.replace('bi-sun-fill', 'bi-moon-stars-fill');
+        }
+    }
+
+    // Khởi tạo icon dựa trên theme hiện tại
+    updateIcon(htmlElement.getAttribute('data-bs-theme'));
+
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = htmlElement.getAttribute('data-bs-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        
+        htmlElement.setAttribute('data-bs-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateIcon(newTheme);
+    });
+</script>
+
+</body>
+</html>
