@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>TaskForge | Sync & Edit</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -25,6 +26,9 @@
         document.documentElement.classList.add('dark');
       }
     })();
+    
+    // ✅ GET CSRF TOKEN
+    const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
   </script>
   <style>
     body { 
@@ -102,18 +106,18 @@
       </div>
 
       <!-- Stats -->
-      <div class="grid grid-cols-3 gap-3 mb-6 p-3 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-500/10 dark:to-purple-500/10 rounded-xl">
-        <div class="text-center p-2">
-          <div class="text-xl font-black text-blue-600 dark:text-blue-400" id="totalTasks">0</div>
-          <div class="text-xs text-gray-600 dark:text-gray-400">Tổng</div>
+      <div class="grid grid-cols-3 gap-3 mb-6 p-4 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-500/10 dark:to-purple-500/10 rounded-xl border-2 border-blue-200 dark:border-blue-500/30 shadow-sm">
+        <div class="text-center p-2 bg-white dark:bg-gray-700/50 rounded-lg">
+          <div class="text-2xl font-black text-blue-600 dark:text-blue-400" id="totalTasks">0</div>
+          <div class="text-xs font-semibold text-gray-700 dark:text-gray-300">Tổng</div>
         </div>
-        <div class="text-center p-2">
-          <div class="text-xl font-black text-green-600 dark:text-green-400" id="completedTasks">0</div>
-          <div class="text-xs text-gray-600 dark:text-gray-400">Hoàn thành</div>
+        <div class="text-center p-2 bg-white dark:bg-gray-700/50 rounded-lg">
+          <div class="text-2xl font-black text-green-600 dark:text-green-400" id="completedTasks">0</div>
+          <div class="text-xs font-semibold text-gray-700 dark:text-gray-300">Hoàn thành</div>
         </div>
-        <div class="text-center p-2">
-          <div class="text-xl font-black text-orange-600 dark:text-orange-400" id="pendingTasks">0</div>
-          <div class="text-xs text-gray-600 dark:text-gray-400">Còn lại</div>
+        <div class="text-center p-2 bg-white dark:bg-gray-700/50 rounded-lg">
+          <div class="text-2xl font-black text-orange-600 dark:text-orange-400" id="pendingTasks">0</div>
+          <div class="text-xs font-semibold text-gray-700 dark:text-gray-300">Còn lại</div>
         </div>
       </div>
 
@@ -239,7 +243,7 @@ class TaskForge {
   async addTask() {
     const input = document.getElementById('taskInput');
     const text = input.value.trim();
-    if (!text) return;
+    if (!text || text.length > 200) return;
 
     const formData = new FormData();
     formData.append('name', text);
@@ -247,6 +251,9 @@ class TaskForge {
     try {
       const response = await fetch('/add', {
         method: 'POST',
+        headers: {
+          'X-CSRFToken': CSRF_TOKEN
+        },
         body: formData
       });
       if (response.ok) {
@@ -295,6 +302,9 @@ class TaskForge {
       try {
         const response = await fetch(`/edit/${id}`, {
           method: 'POST',
+          headers: {
+            'X-CSRFToken': CSRF_TOKEN
+          },
           body: formData
         });
         if (response.ok) {
@@ -408,12 +418,12 @@ class TaskForge {
                   onclick="taskApp.saveEdit(${task.id})" 
                   class="p-1 text-green-500 hover:text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-md transition-all text-xs"
                   title="Lưu"
-                >💾</button>
+                >✓</button>
                 <button 
                   onclick="taskApp.cancelEdit()" 
                   class="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600/30 rounded-md transition-all text-xs"
                   title="Hủy"
-                >↶</button>
+                >✕</button>
               ` : `
                 <button 
                   onclick="taskApp.startEdit(${task.id})" 
