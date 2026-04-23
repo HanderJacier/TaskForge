@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from db import init_db, get_db
 
 app = Flask(__name__)
@@ -9,31 +9,38 @@ init_db()
 # ================= REGISTER =================
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    error = None
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
+        confirm_password = request.form["confirm_password"]
 
-        conn = get_db()
-        cur = conn.cursor()
+        if password != confirm_password:
+            error = "Mật khẩu không khớp"
 
-        try:
-            cur.execute(
-                "INSERT INTO users (username, password) VALUES (?, ?)",
-                (username, password)
-            )
-            conn.commit()
-        except:
-            return "Username đã tồn tại"
+        if not error:
+            conn = get_db()
+            cur = conn.cursor()
 
-        conn.close()
-        return redirect(url_for("login"))
+            try:
+                cur.execute(
+                    "INSERT INTO users (username, password) VALUES (?, ?)",
+                    (username, password)
+                )
+                conn.commit()
+                conn.close()
+                return redirect(url_for("login"))
+            except:
+                error = "Username đã tồn tại"
+                conn.close()
 
-    return render_template("register.html")
+    return render_template("register.html", error=error)
 
 
 # ================= LOGIN =================
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    error = None
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
@@ -52,9 +59,9 @@ def login():
             session["user_id"] = user[0]
             return redirect(url_for("index"))
         else:
-            return "Sai tài khoản hoặc mật khẩu"
+            error = "Sai tài khoản hoặc mật khẩu"
 
-    return render_template("login.html")
+    return render_template("login.html", error=error)
 
 
 # ================= INDEX =================
@@ -181,11 +188,40 @@ def delete(task_id):
     return redirect(url_for("index"))
 
 
+# ================= API GET TASKS =================
+@app.route("/api/tasks")
+def api_tasks():
+    if "user_id" not in session:
+        return {"error": "Not logged in"}, 401
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT id, name, status FROM tasks WHERE user_id=?",
+        (session["user_id"],)
+    )
+    tasks = cur.fetchall()
+    conn.close()
+
+    # Convert to dict format
+    task_list = []
+    for task in tasks:
+        task_list.append({
+            "id": task[0],
+            "text": task[1],
+            "done": task[2] == "done",
+        })
+
+    return jsonify({"tasks": task_list})
+
+
 # ================= LOGOUT =================
 @app.route("/logout")
 def logout():
-    session.pop("user_id", None)
+    session.clear()
     return redirect(url_for("login"))
+
 
 # ================= RUN APP (PHẢI Ở CUỐI) =================
 if __name__ == "__main__":
