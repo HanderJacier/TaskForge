@@ -1,15 +1,79 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from db import init_db, get_db
 import bcrypt
 import os
 import re
+from functools import wraps
+import time
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "change-me-in-production-12345")
+app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(32)
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = False  # Set True in production with HTTPS
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 csrf = CSRFProtect(app)
 
+# Rate Limiter
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
+
+# Custom error handler for rate limiting - trả về JSON để JS xử lý
+@app.errorhandler(429)
+def rate_limit_handler(e):
+    # Lấy thời gian thử lại - mặc định 60 giây nếu không có
+    retry_after = getattr(e, 'retry_after', 60)
+    wait_seconds = int(retry_after) if retry_after else 60
+    
+    # Check referer to determine which page to show
+    referer = request.headers.get('Referer', '')
+    error_msg = f"Quá nhiều yêu cầu. Vui lòng thử lại sau {wait_seconds} giây."
+    
+    if 'register' in referer:
+        return render_template("register.html", error=error_msg), 429
+    elif 'login' in referer or request.path == '/login':
+        return render_template("login.html", error=error_msg), 429
+    
+    if request.headers.get('Accept') == 'application/json' or request.is_json:
+        return jsonify({"error": error_msg, "retry_after": wait_seconds}), 429
+    
+    return render_template("login.html", error=error_msg), 429
+
 init_db()
+
+# ================= LOGIN TRACKING =================
+login_attempts = {}  # {username: {"count": 0, "locked_until": timestamp}}
+MAX_LOGIN_ATTEMPTS = 5
+LOCKOUT_DURATION = 300  # 5 phút
+
+def check_account_lockout(username):
+    """Kiểm tra tài khoản có bị khóa không"""
+    if username in login_attempts:
+        data = login_attempts[username]
+        if data.get("locked_until", 0) > time.time():
+            return True
+    return False
+
+def record_failed_login(username):
+    """Ghi nhận đăng nhập thất bại"""
+    if username not in login_attempts:
+        login_attempts[username] = {"count": 0, "locked_until": 0}
+    
+    login_attempts[username]["count"] += 1
+    
+    if login_attempts[username]["count"] >= MAX_LOGIN_ATTEMPTS:
+        login_attempts[username]["locked_until"] = time.time() + LOCKOUT_DURATION
+
+def clear_login_attempts(username):
+    """Xóa bộ đếm đăng nhập thất bại"""
+    if username in login_attempts:
+        login_attempts[username] = {"count": 0, "locked_until": 0}
 
 # ================= SECURITY HELPERS =================
 def hash_password(password):
@@ -34,6 +98,7 @@ def validate_password(password):
 
 # ================= REGISTER =================
 @app.route("/register", methods=["GET", "POST"])
+@limiter.limit("3 per minute")
 def register():
     error = None
     if request.method == "POST":
@@ -72,11 +137,18 @@ def register():
 
 # ================= LOGIN =================
 @app.route("/login", methods=["GET", "POST"])
+@limiter.limit("5 per minute")
 def login():
     error = None
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
+
+        # Kiểm tra account lockout
+        if check_account_lockout(username):
+            remaining = int(login_attempts[username]["locked_until"] - time.time())
+            error = f"Tài khoản bị khóa tạm thời. Thử lại sau {remaining} giây."
+            return render_template("login.html", error=error)
 
         conn = get_db()
         cur = conn.cursor()
@@ -89,10 +161,12 @@ def login():
         conn.close()
 
         if user and verify_password(password, user[1]):
+            clear_login_attempts(username)
             session["user_id"] = user[0]
             session.permanent = False
             return redirect(url_for("index"))
         else:
+            record_failed_login(username)
             error = "Sai tài khoản hoặc mật khẩu"
 
     return render_template("login.html", error=error)

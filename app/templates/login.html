@@ -142,9 +142,8 @@
     </div>
 
     {% if error %}
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <div class="alert alert-danger" role="alert">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     {% endif %}
 
@@ -200,6 +199,34 @@
         localStorage.setItem('theme', newTheme);
         updateIcon(newTheme);
     });
+
+    // ================= RATE LIMIT AUTO-RETRY =================
+    const errorMsg = document.querySelector('.alert-danger');
+    if (errorMsg) {
+        const match = errorMsg.textContent.match(/(\d+)\s*giây/);
+        if (match) {
+            let seconds = parseInt(match[1]);
+            const submitBtn = document.querySelector('.btn-login');
+            
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = `Chờ ${seconds}s...`;
+                
+                const countdown = setInterval(() => {
+                    seconds--;
+                    
+                    if (seconds <= 1) {
+                        clearInterval(countdown);
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Đăng nhập';
+                        errorMsg.remove(); // Xóa thông báo lỗi
+                    } else {
+                        submitBtn.textContent = `Chờ ${seconds}s...`;
+                    }
+                }, 1000);
+            }
+        }
+    }
 </script>
 
 </body>

@@ -5,7 +5,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_NAME = os.path.join(BASE_DIR, "tasks.db")
 
 def get_db():
-    return sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect(DB_NAME)
+    conn.execute("PRAGMA foreign_keys = ON")  # Enable foreign key constraints
+    return conn
 
 
 def init_db():
@@ -27,9 +29,17 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         status TEXT DEFAULT 'pending',
-        user_id INTEGER
+        user_id INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        due_date TEXT,
+        priority TEXT DEFAULT 'medium',
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
     """)
+
+    # INDEX for faster queries
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)")
 
     conn.commit()
     conn.close()
