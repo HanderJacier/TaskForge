@@ -8,7 +8,7 @@ def get_db():
     conn = sqlite3.connect(DB_NAME)
     conn.execute("PRAGMA foreign_keys = ON")  # Enable foreign key constraints
     return conn
-
+#ff
 
 def init_db():
     conn = get_db()
