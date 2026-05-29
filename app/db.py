@@ -6,6 +6,8 @@ DB_NAME = os.path.join(BASE_DIR, "tasks.db")
 
 def get_db():
     conn = sqlite3.connect(DB_NAME)
+    # Return rows as mapping-like objects so code can use t['id'], t['name']
+    conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")  # Enable foreign key constraints
     return conn
 #ff
