@@ -13,14 +13,14 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(32)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SECURE'] = False  # Set True in production with HTTPS
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax' #lax
 csrf = CSRFProtect(app)
 
 # Rate Limiter
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
+    default_limits=["200 per day", "50 per hour"], #giới hạn
     storage_uri="memory://"
 )
 
@@ -35,11 +35,12 @@ def rate_limit_handler(e):
     referer = request.headers.get('Referer', '')
     error_msg = f"Quá nhiều yêu cầu. Vui lòng thử lại sau {wait_seconds} giây."
     
-    if 'register' in referer:
+    if 'register' in referer: #nếu chọn đăng ký thì mở đăng ký ko thì mở login
         return render_template("register.html", error=error_msg), 429
     elif 'login' in referer or request.path == '/login':
         return render_template("login.html", error=error_msg), 429
     
+    #nếu đang bị ban thì tiếp tục ban sau khi hết ban reset
     if request.headers.get('Accept') == 'application/json' or request.is_json:
         return jsonify({"error": error_msg, "retry_after": wait_seconds}), 429
     
